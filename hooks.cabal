@@ -1,0 +1,96 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: ab76238d176786292686fd0d21ae15743e8bc5b7774b4c4214632687b72a4305
+
+name:           hooks
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/Github username here/hooks#readme>
+homepage:       https://github.com/Github username here/hooks#readme
+bug-reports:    https://github.com/Github username here/hooks/issues
+author:         Author name here
+maintainer:     Author email here
+copyright:      2019 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/Github username here/hooks
+
+library
+  exposed-modules:
+      Control.Monad.Hooks
+      Control.Monad.Hooks.Class
+      Control.Monad.Hooks.Do
+      Control.Monad.Hooks.Do.Qualified
+      Control.Monad.Hooks.List
+      Control.Monad.Hooks.Primitives
+      Control.Monad.Hooks.Primitives.Effect
+      Control.Monad.Hooks.Primitives.Map
+      Control.Monad.Hooks.Primitives.State
+      Control.Monad.Hooks.Runtime
+  other-modules:
+      Paths_hooks
+  hs-source-dirs:
+      src
+  default-extensions: DuplicateRecordFields NamedFieldPuns DeriveAnyClass DeriveGeneric OverloadedStrings RankNTypes LambdaCase ScopedTypeVariables GADTs TypeFamilies DataKinds TypeOperators TupleSections FlexibleInstances FlexibleContexts TypeApplications
+  build-depends:
+      async
+    , base >=4.7 && <5
+    , containers
+    , exceptions
+    , mtl
+    , random
+    , stm
+  default-language: Haskell2010
+
+executable hooks-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_hooks
+  default-extensions: DuplicateRecordFields NamedFieldPuns DeriveAnyClass DeriveGeneric OverloadedStrings RankNTypes LambdaCase ScopedTypeVariables GADTs TypeFamilies DataKinds TypeOperators TupleSections FlexibleInstances FlexibleContexts TypeApplications
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      async
+    , base >=4.7 && <5
+    , containers
+    , exceptions
+    , hooks
+    , mtl
+    , random
+    , stm
+  if impl(ghc >= 9.0.0)
+    hs-source-dirs:
+        app-common, app-ghc-9
+  else
+    hs-source-dirs:
+        app-common, app-ghc-8
+  default-language: Haskell2010
+
+test-suite hooks-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_hooks
+  hs-source-dirs:
+      test
+  default-extensions: DuplicateRecordFields NamedFieldPuns DeriveAnyClass DeriveGeneric OverloadedStrings RankNTypes LambdaCase ScopedTypeVariables GADTs TypeFamilies DataKinds TypeOperators TupleSections FlexibleInstances FlexibleContexts TypeApplications
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      async
+    , base >=4.7 && <5
+    , containers
+    , exceptions
+    , hooks
+    , mtl
+    , random
+    , stm
+  default-language: Haskell2010

@@ -1,0 +1,77 @@
+name:                hooks
+version:             0.1.0.0
+github:              "Github username here/hooks"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "Author email here"
+copyright:           "2019 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            App category here
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/Github username here/hooks#readme>
+
+default-extensions:
+  - DuplicateRecordFields
+  - NamedFieldPuns
+  - DeriveAnyClass
+  - DeriveGeneric
+  - OverloadedStrings
+  - RankNTypes
+  - LambdaCase
+  - ScopedTypeVariables
+  - GADTs
+  - TypeFamilies
+  - DataKinds
+  - TypeOperators
+  - TupleSections
+  - FlexibleInstances
+  - FlexibleContexts
+  - TypeApplications
+
+dependencies:
+  - base >= 4.7 && < 5
+  - containers
+  - mtl
+  - async
+  - exceptions
+  - stm
+  - random
+
+library:
+  source-dirs: src
+
+executables:
+  hooks-exe:
+    main:                Main.hs
+    when:
+      - condition: impl(ghc >= 9.0.0)
+        then:
+          source-dirs: app-common, app-ghc-9
+        else:
+          source-dirs: app-common, app-ghc-8
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hooks
+
+tests:
+  hooks-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hooks
