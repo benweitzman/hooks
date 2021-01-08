@@ -55,9 +55,9 @@ executables:
     when:
       - condition: impl(ghc >= 9.0.0)
         then:
-          source-dirs: app-common, app-ghc-9
+          source-dirs: app/common, app/ghc-9
         else:
-          source-dirs: app-common, app-ghc-8
+          source-dirs: app/common, app/ghc-8
     ghc-options:
     - -threaded
     - -rtsopts

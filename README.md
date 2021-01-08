@@ -36,6 +36,11 @@ testProg = Hook.do
     useTick (1000000 + randomOffset)
 ```
 
+This example runs a bunch of counters in parallel. You can change the number
+by entering numbers on the command line.
+
+[![asciicast](https://asciinema.org/a/D63N4XhgMr7dxduVg8sXql3Kh.svg)](https://asciinema.org/a/D63N4XhgMr7dxduVg8sXql3Kh)
+
 `Hooks` is a not-quite-Monad for writing programs producing values
 that change over time. Support for `RebindableSyntax` or `QualifiedDo` included.
 
