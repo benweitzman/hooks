@@ -23,7 +23,7 @@ data Hooks effects a where
     -- not a monad :/
 
 -- apologies you have to know so much just to fmap!
-instance (effects ~ effects ++ '[], Suffix effects '[] (Length effects), Prefix effects effects) => Functor (Hooks effects) where
+instance (effects ~ (effects ++ '[]), Suffix effects '[] (Length effects), Prefix effects effects) => Functor (Hooks effects) where
   fmap f hook = HookBind hook (HookReturn . f)
 
 stepHooks
