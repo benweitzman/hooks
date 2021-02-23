@@ -4,13 +4,13 @@ module Control.Monad.Hooks.Primitives.Effect where
 
 import Control.Monad.Hooks.Class
 
-data Effect a x where
-  Effect :: Eq a => a -> IO (IO ()) -> Effect a ()
+data Effect a m x where
+  Effect :: Eq a => a -> m (m ()) -> Effect a m ()
 
 instance Hook (Effect a) where
-   data instance HookState (Effect a) = EffectItem a (IO ())
+   data instance HookState (Effect a) m = EffectItem a (m ())
 
-   data instance AsyncUpdate (Effect a)
+   data instance AsyncUpdate (Effect a) m
 
    updateState update = case update of {}
 

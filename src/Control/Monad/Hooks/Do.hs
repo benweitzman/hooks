@@ -6,19 +6,19 @@ import Prelude hiding (return, (>>=), (>>), Monad)
 import qualified Prelude as P
 
 data Hook  = Hook
-  { return :: forall a . a -> Hooks '[] a
+  { return :: forall a m . a -> Hooks m '[] a
   , (>>=)
-    :: forall effects xs ys a b
+    :: forall effects xs ys a b m
     . (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects)
-    => Hooks xs a
-    -> (a -> Hooks ys b)
-    -> Hooks effects b
+    => Hooks m xs a
+    -> (a -> Hooks m ys b)
+    -> Hooks m effects b
   , (>>)
-        :: forall effects xs ys a b
+        :: forall effects xs ys a b m
         . (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects)
-        => Hooks xs a
-        -> Hooks ys b
-        -> Hooks effects b
+        => Hooks m xs a
+        -> Hooks m ys b
+        -> Hooks m effects b
   }
 
 hook :: Hook

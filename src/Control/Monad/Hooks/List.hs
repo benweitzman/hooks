@@ -1,6 +1,5 @@
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
@@ -9,30 +8,30 @@ module Control.Monad.Hooks.List where
 import Control.Monad.Hooks.Class
 import Data.Proxy (Proxy(..))
 
-data Elem f effects where
-  Here :: f a -> Elem f (a ':  effects)
-  There :: Elem f effects -> Elem f (e ': effects)
+data Elem f effects m where
+  Here :: f a m -> Elem f (a ':  effects) m
+  There :: Elem f effects m -> Elem f (e ': effects) m
 
-data HookList effects where
-   HookListNil :: HookList '[]
-   HookListCons :: Hook k => HookState k -> HookList effects -> HookList (k ': effects)
+data HookList effects m where
+   HookListNil :: HookList '[] m
+   HookListCons :: Hook k => HookState k m -> HookList effects m -> HookList (k ': effects) m
 
-traverseHookList :: Monad m => HookList effects -> (forall e . Hook e => HookState e -> m ()) -> m ()
+traverseHookList :: Monad m => HookList effects n -> (forall e . Hook e => HookState e n -> m ()) -> m ()
 traverseHookList HookListNil _ = return ()
 traverseHookList (HookListCons item rest) apply = do
   apply item
   traverseHookList rest apply
 
-hooksListPlusPlus :: HookList xs -> HookList ys -> HookList (xs ++ ys)
+hooksListPlusPlus :: HookList xs m -> HookList ys m -> HookList (xs ++ ys) m
 hooksListPlusPlus HookListNil ys = ys
 hooksListPlusPlus (HookListCons item rest) ys = HookListCons item (hooksListPlusPlus rest ys)
 
 data N = Z | S N
 
 class Suffix effects xs drop | effects drop -> xs where
-  hooksListTail :: Proxy drop -> HookList effects -> HookList xs
+  hooksListTail :: Proxy drop -> HookList effects m -> HookList xs m
 
-  suffixStateUpdate :: Proxy drop -> Elem f xs -> Elem f effects
+  suffixStateUpdate :: Proxy drop -> Elem f xs m -> Elem f effects m
 
 instance (effects ~ effects') => Suffix effects effects' 'Z where
   hooksListTail _ = id
@@ -45,9 +44,9 @@ instance (Suffix effects ys drop) => Suffix (e ': effects) ys ('S drop)where
   suffixStateUpdate _ x = There $ suffixStateUpdate (Proxy @drop) x
 
 class Prefix effects xs where
-  hooksListHead :: HookList effects -> HookList xs
+  hooksListHead :: HookList effects m -> HookList xs m
 
-  prefixStateUpdate :: Elem f xs -> Elem f effects
+  prefixStateUpdate :: Elem f xs m -> Elem f effects m
 
 instance Prefix effects '[] where
   hooksListHead _ = HookListNil

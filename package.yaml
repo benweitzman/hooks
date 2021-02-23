@@ -45,6 +45,7 @@ dependencies:
   - exceptions
   - stm
   - random
+  - unliftio
 
 library:
   source-dirs: src

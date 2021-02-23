@@ -11,7 +11,7 @@ import Control.Monad (forever)
 import Control.Concurrent (threadDelay)
 import System.Random (randomRIO)
 
-useTick :: Int -> Hooks _ Int
+useTick :: Int -> Hooks IO _ Int
 useTick interval = Hook.do
   (tick, setTick) <- Use (State 0)
 
@@ -23,7 +23,7 @@ useTick interval = Hook.do
 
   Hook.return tick
 
-testProg :: Hooks _ [Int]
+testProg :: Hooks IO _ [Int]
 testProg = Hook.do
   (num, updateNum) <- Use $ State (0 :: Int)
 

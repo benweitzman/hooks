@@ -1,28 +1,40 @@
+{-# LANGUAGE InstanceSigs #-}
+{-# PartialTypeSignatures #-}
+
 module Control.Monad.Hooks.Primitives.Map where
 
 import Control.Monad.Hooks.Runtime
 import Control.Monad.Hooks.Class
 import qualified Data.Map as M
-import Control.Concurrent (newEmptyMVar, putMVar, readMVar)
-import Data.IORef (newIORef, readIORef, writeIORef)
+-- import Control.Concurrent (newEmptyMVar, putMVar, readMVar)
+-- import Data.IORef (newIORef, readIORef, writeIORef)
 import Control.Monad (forM, forM_)
 import qualified Data.Set as S
+import UnliftIO
 
-data Map deps a b x where
-  Map :: deps -> [a] -> (a -> Hooks effects b) -> Map deps a b [b]
+data Map deps a b m x where
+  Map :: deps -> [a] -> (a -> Hooks m effects b) -> Map deps a b m [b]
 
 instance (Ord a, Eq deps) => Hook (Map deps a b) where
-   data instance HookState (Map deps a b) = MapItem
+   data instance HookState (Map deps a b) m = MapItem
       { dependencies :: deps
-      , values :: M.Map a (b, HookExecutionHandle)
+      , values :: M.Map a (b, HookExecutionHandle m)
       }
 
-   data instance AsyncUpdate (Map deps a b) = MapUpdate a b
+   data instance AsyncUpdate (Map deps a b) m = MapUpdate a b
 
    updateState (MapUpdate key value) item@MapItem { values } = item
      { values = M.adjust (\(_, handle) -> (value, handle)) key values
      }
 
+   step
+     :: forall m x
+      . (MonadUnliftIO m)
+     => (AsyncUpdate (Map deps a b) m
+     -> m ())
+     -> Map deps a b m x
+     -> Maybe (HookState (Map deps a b) m)
+     -> m (x, HookState (Map deps a b) m)
    step dispatch (Map deps values action) mPrevState = case mPrevState of
      Nothing -> do
        results <- forM values $ \value -> (value,) <$> createSubcontext value
@@ -41,7 +53,7 @@ instance (Ord a, Eq deps) => Hook (Map deps a b) where
 
      where
 
-       createSubcontext :: a -> IO (b, HookExecutionHandle)
+       createSubcontext :: a -> m (b, HookExecutionHandle m)
        createSubcontext value = do
          mvar <- newEmptyMVar
          initialRef <- newIORef True
