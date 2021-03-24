@@ -13,9 +13,9 @@ import System.Random (randomRIO)
 
 useTick :: Num a => Int -> Hooks IO _ a
 useTick interval = useNamedContext @"tick" $ Hook.do
-  (tick, setTick) <- Use (State 0)
+  (tick, setTick) <- useState 0
 
-  Use $ Effect interval $ do
+  useEffect interval $ do
     thread <- async $ forever $ do
       threadDelay interval
       setTick $ Modify (+1)
@@ -25,17 +25,17 @@ useTick interval = useNamedContext @"tick" $ Hook.do
 
 testProg :: Hooks IO _ [Int]
 testProg = Hook.do
-  (num, updateNum) <- Use $ State (0 :: Int)
+  (num, updateNum) <- useState (0 :: Int)
 
-  Use $ Effect () $ do
+  once $ do
     thread <- async . forever $ do
       x <- getLine
       updateNum . Set $ read x
     return $ cancel thread
 
-  Use $ Map () [1..num] $ \i -> Hook.do
-    (randomOffset, updateRandomOffset) <- Use $ State 0
-    Use $ Effect () $ do
+  useMap () [1..num] $ \i -> Hook.do
+    (randomOffset, updateRandomOffset) <- useState 0
+    once $ do
       randomValue <- randomRIO (-1000000, 1000000)
       updateRandomOffset $ Set randomValue
       return $ return ()

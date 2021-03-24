@@ -8,7 +8,9 @@ import UnliftIO hiding (handle)
 data Context (s :: Symbol) a m x where
   NamedContext :: forall s a m effects . Hooks m effects a -> Context s a m a
 
-useNamedContext :: forall s a m effects . Hooks m effects a -> Hooks m '[Context s a] a
+type (:~>) = Context
+
+useNamedContext :: forall s a m effects . Hooks m effects a -> Hooks m '[s :~> a] a
 useNamedContext = Use . NamedContext
 
 instance Hook (Context s a) where

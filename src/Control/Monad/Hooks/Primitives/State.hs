@@ -1,10 +1,17 @@
 module Control.Monad.Hooks.Primitives.State where
 
 import Control.Monad.Hooks.Class  
-  
+import Control.Monad.Hooks.Runtime (Hooks(Use))
+
 data State a m x where
    State :: a -> State a m (a, AsyncUpdate (State a) m -> m ())
    StateSync :: m a -> State a m (a, AsyncUpdate (State a) m -> m ())
+
+useState :: a -> Hooks m '[State a] (a, AsyncUpdate (State a) m -> m ())
+useState = Use . State
+
+useStateSync :: m a -> Hooks m '[State a] (a, AsyncUpdate (State a) m -> m ())
+useStateSync = Use . StateSync
 
 instance Hook (State a) where
    data instance HookState (State a) m = StateValue a

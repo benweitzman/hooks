@@ -3,9 +3,16 @@
 module Control.Monad.Hooks.Primitives.Effect where
 
 import Control.Monad.Hooks.Class
+import Control.Monad.Hooks.Runtime (Hooks(Use))
 
 data Effect a m x where
   Effect :: Eq a => a -> m (m ()) -> Effect a m ()
+
+useEffect :: Eq a => a -> m (m ()) -> Hooks m '[Effect a] ()
+useEffect key eff = Use $ Effect key eff
+
+once :: m (m ()) -> Hooks m '[Effect ()] ()
+once = useEffect ()
 
 instance Hook (Effect a) where
    data instance HookState (Effect a) m = EffectItem a (m ())

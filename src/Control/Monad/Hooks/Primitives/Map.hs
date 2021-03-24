@@ -15,6 +15,9 @@ import UnliftIO
 data Map deps a b m x where
   Map :: deps -> [a] -> (a -> Hooks m effects b) -> Map deps a b m [b]
 
+useMap :: (Ord a, Eq deps) => deps -> [a] -> (a -> Hooks m effects b) -> Hooks m '[Map deps a b] [b]
+useMap deps vals action = Use $ Map deps vals action
+
 instance (Ord a, Eq deps) => Hook (Map deps a b) where
    data instance HookState (Map deps a b) m = MapItem
       { dependencies :: deps
