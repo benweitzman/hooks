@@ -11,8 +11,13 @@ import Control.Monad (forever)
 import Control.Concurrent (threadDelay)
 import System.Random (randomRIO)
 
-useTick :: Num a => Int -> Hooks IO _ a
-useTick interval = useNamedContext @"tick" $ Hook.do
+data Tick a
+
+type instance Deps (Tick a) = Int
+type instance Outputs (Tick a) = a
+
+useTick :: forall a . Num a => Int -> Hooks IO '[Context (Tick a)] a
+useTick = useContext $ \interval -> Hook.do
   (tick, setTick) <- useState 0
 
   useEffect interval $ do
