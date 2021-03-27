@@ -1,21 +1,18 @@
 {-# LANGUAGE InstanceSigs #-}
-{-# PartialTypeSignatures #-}
 
 module Control.Monad.Hooks.Primitives.Map where
 
 import Control.Monad.Hooks.Runtime
 import Control.Monad.Hooks.Class
 import qualified Data.Map as M
--- import Control.Concurrent (newEmptyMVar, putMVar, readMVar)
--- import Data.IORef (newIORef, readIORef, writeIORef)
 import Control.Monad (forM, forM_)
 import qualified Data.Set as S
 import UnliftIO
 
 data Map deps a b m x where
-  Map :: deps -> [a] -> (a -> Hooks m effects b) -> Map deps a b m [b]
+  Map :: Traversable t => deps -> t a -> (a -> Hooks m effects b) -> Map deps a b m (t b)
 
-useMap :: (Ord a, Eq deps) => deps -> [a] -> (a -> Hooks m effects b) -> Hooks m '[Map deps a b] [b]
+useMap :: (Ord a, Eq deps, Traversable t) => deps -> t a -> (a -> Hooks m effects b) -> Hooks m '[Map deps a b] (t b)
 useMap deps vals action = Use $ Map deps vals action
 
 instance (Ord a, Eq deps) => Hook (Map deps a b) where
@@ -41,7 +38,7 @@ instance (Ord a, Eq deps) => Hook (Map deps a b) where
    step dispatch (Map deps values action) mPrevState = case mPrevState of
      Nothing -> do
        results <- forM values $ \value -> (value,) <$> createSubcontext value
-       return (fst . snd <$> results, MapItem deps (M.fromList results))
+       return (fst . snd <$> results, MapItem deps (M.fromList $ toList results))
      Just (MapItem prevDependencies prevValues) -> do
        let depsChanged = prevDependencies /= deps
        results <- forM values $ \value -> do
@@ -49,12 +46,14 @@ instance (Ord a, Eq deps) => Hook (Map deps a b) where
          case mPrevValue of
            Just prevValue | not depsChanged -> return (value, prevValue)
            _ -> (value,) <$> createSubcontext value
-       let previous = prevValues `M.withoutKeys` S.fromList (fst <$> results)
+       let previous = prevValues `M.withoutKeys` S.fromList (fst <$> toList results)
        forM_ (M.elems previous) $ \(_, HookExecutionHandle { terminate } ) -> terminate
-       return (fst . snd <$> results, MapItem deps (M.fromList results))
+       return (fst . snd <$> results, MapItem deps (M.fromList $ toList results))
 
 
      where
+
+       toList = foldMap (:[])
 
        createSubcontext :: a -> m (b, HookExecutionHandle m)
        createSubcontext value = do
