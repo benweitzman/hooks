@@ -2,7 +2,7 @@
 
 module Control.Monad.Hooks.Primitives.Effect where
 
-import Control.Monad.Hooks.Primitives.State
+import Control.Monad.Hooks.Stateful
 import Control.Monad.Hooks.Class
 import Control.Monad.Hooks.Runtime (Hooks(Use))
 

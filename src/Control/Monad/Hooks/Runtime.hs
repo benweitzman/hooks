@@ -4,6 +4,7 @@ module Control.Monad.Hooks.Runtime where
 
 import Control.Monad.Hooks.Class
 import Control.Monad.Hooks.List
+import Control.Monad.Hooks.Stateful
 
 import Data.Proxy (Proxy(..))
 import UnliftIO
@@ -11,18 +12,20 @@ import UnliftIO
 data Hooks m effects a where
   Use :: (Hook k) => k m x -> Hooks m '[k] x
 
-  HookReturn :: a -> Hooks m '[] a
+  HookReturn :: Stateful a -> Hooks m '[] a
 
   HookBind
-    :: (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects)
+    :: (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects, Binding a)
     => Hooks m xs a
-    -> (a -> Hooks m ys b)
+    -> (Bound a -> Hooks m ys b)
     -> Hooks m (xs ++ ys) b
     -- not a monad :/
 
+{-
 -- apologies you have to know so much just to fmap!
 instance (effects ~ (effects ++ '[]), Suffix effects '[] (Length effects), Prefix effects effects) => Functor (Hooks m effects) where
   fmap f hook = HookBind hook (HookReturn . f)
+-}
 
 stepHooks
   :: forall effects a m
@@ -37,10 +40,10 @@ stepHooks writeState (Use programItem) Nothing = do
 stepHooks writeState (Use programItem) (Just (HookListCons listItem rest)) = do
   (result, item) <- step (writeState . Here) programItem (Just listItem)
   return (result, HookListCons item rest)
-stepHooks _ (HookReturn value) _ = return (value, HookListNil)
+stepHooks _ (HookReturn (Stateful value)) _ = return (value, HookListNil)
 stepHooks writeState (HookBind (program :: Hooks m xs i) combinedFunction) prevList = do
   (a, firstList) <- stepHooks (writeState . prefixStateUpdate) program (hooksListHead <$> prevList)
-  (b, secondList) <- stepHooks (writeState . suffixStateUpdate (Proxy @(Length xs))) (combinedFunction a) (hooksListTail (Proxy @(Length xs)) <$> prevList)
+  (b, secondList) <- stepHooks (writeState . suffixStateUpdate (Proxy @(Length xs))) (combinedFunction $ bind a) (hooksListTail (Proxy @(Length xs)) <$> prevList)
   return (b, hooksListPlusPlus firstList secondList)
 
 applyStateUpdate :: Elem AsyncUpdate effects m -> HookList effects m -> HookList effects m

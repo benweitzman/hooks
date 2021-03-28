@@ -8,7 +8,7 @@ import qualified Data.Map as M
 import Control.Monad (forM, forM_)
 import qualified Data.Set as S
 import UnliftIO
-import Control.Monad.Hooks.Primitives.State
+import Control.Monad.Hooks.Stateful
 import Control.Monad.Hooks.List (HookList, Elem, traverseHookList)
 import Data.Coerce (coerce)
 
@@ -16,14 +16,14 @@ data Map effects a b m x where
   Map
     :: Traversable t
     => Stateful (t a)
-    -> (a -> Hooks m effects (Stateful b))
-    -> Map effects a b m (Stateful (t b))
+    -> (a -> Hooks m effects b)
+    -> Map effects a b m (t b)
 
 useMap
   :: (Ord a, Traversable t)
   => Stateful (t a)
-  -> (a -> Hooks m effects (Stateful b))
-  -> Hooks m '[Map effects a b] (Stateful (t b))
+  -> (a -> Hooks m effects b)
+  -> Hooks m '[Map effects a b] (t b)
 useMap vals action = Use $ Map vals action
 
 instance (Ord a) => Hook (Map effects a b) where
@@ -52,7 +52,7 @@ instance (Ord a) => Hook (Map effects a b) where
 
      destroyOldStates results
 
-     return (Stateful $ newValues results, newSubstates results)
+     return (newValues results, newSubstates results)
 
      where
 
@@ -61,17 +61,17 @@ instance (Ord a) => Hook (Map effects a b) where
 
        newSubstates
          :: Foldable t
-         => t (a, (Stateful b, HookList effects m))
+         => t (a, (b, HookList effects m))
          -> HookState (Map effects a b) m
        newSubstates results = MapItem $ fmap snd $ M.fromList $ toList results
 
        newValues
          :: Functor t
-         => t (a, (Stateful b, HookList effects m))
+         => t (a, (b, HookList effects m))
          -> t b
        newValues results = coerce . fst . snd <$> results
 
-       destroyOldStates :: Foldable t => t (a, (Stateful b, HookList effects m)) -> m ()
+       destroyOldStates :: Foldable t => t (a, (b, HookList effects m)) -> m ()
        destroyOldStates results = case mPrevState of
          Just (MapItem prevValues) -> do
            let previous = prevValues `M.withoutKeys` S.fromList (fst <$> toList results)

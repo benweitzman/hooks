@@ -3,22 +3,23 @@ module Control.Monad.Hooks.Do where
 import Control.Monad.Hooks hiding (Hook)
 import Control.Monad.Hooks.List
 import Prelude hiding (return, (>>=), (>>), Monad)
+import Control.Monad.Hooks.Stateful
 import qualified Prelude as P
 
 data Hook  = Hook
-  { return :: forall a m . a -> Hooks m '[] a
+  { return :: forall a m . Stateful a -> Hooks m '[] a
   , (>>=)
     :: forall effects xs ys a b m
-    . (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects)
+    . (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects, Binding a)
     => Hooks m xs a
-    -> (a -> Hooks m ys b)
+    -> (Bound a -> Hooks m ys b)
     -> Hooks m effects b
   , (>>)
-        :: forall effects xs ys a b m
-        . (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects)
-        => Hooks m xs a
-        -> Hooks m ys b
-        -> Hooks m effects b
+      :: forall effects xs ys a b m
+      . (Prefix effects xs, Suffix effects ys (Length xs), (xs ++ ys) ~ effects, Binding a)
+      => Hooks m xs a
+      -> Hooks m ys b
+      -> Hooks m effects b
   }
 
 hook :: Hook

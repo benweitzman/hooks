@@ -1,23 +1,17 @@
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Control.Monad.Hooks.Primitives.State where
 
+import Control.Monad.Hooks.Stateful
 import Control.Monad.Hooks.Class  
 import Control.Monad.Hooks.Runtime (Hooks(Use))
-import Data.Functor.Identity
-
-newtype Stateful a = Stateful a
-  deriving (Functor, Applicative, Monad) via Identity
-  deriving newtype Show
 
 data State a m x where
-   State :: a -> State a m (Stateful a, AsyncUpdate (State a) m -> m ())
-   StateSync :: m a -> State a m (Stateful a, AsyncUpdate (State a) m -> m ())
+   State :: a -> State a m (a `Escaping` (AsyncUpdate (State a) m -> m ()))
+   StateSync :: m a -> State a m (a `Escaping` (AsyncUpdate (State a) m -> m ()))
 
-useState :: a -> Hooks m '[State a] (Stateful a, AsyncUpdate (State a) m -> m ())
+useState :: a -> Hooks m '[State a] (a `Escaping` (AsyncUpdate (State a) m -> m ()))
 useState = Use . State
 
-useStateSync :: m a -> Hooks m '[State a] (Stateful a, AsyncUpdate (State a) m -> m ())
+useStateSync :: m a -> Hooks m '[State a] (a `Escaping` (AsyncUpdate (State a) m -> m ()))
 useStateSync = Use . StateSync
 
 instance Hook (State a) where
@@ -30,9 +24,9 @@ instance Hook (State a) where
 
    step dispatch (StateSync genInitialState) Nothing = do
      initialState <- genInitialState
-     return ((Stateful initialState, dispatch), StateValue initialState)
-   step dispatch (State initialState) Nothing = return ((Stateful initialState, dispatch), StateValue initialState)
-   step dispatch (State _) (Just (StateValue value)) = return ((Stateful value, dispatch), StateValue value)
-   step dispatch (StateSync _) (Just (StateValue value)) = return ((Stateful value, dispatch), StateValue value)
+     return (initialState `Escaping` dispatch, StateValue initialState)
+   step dispatch (State initialState) Nothing = return (initialState `Escaping` dispatch, StateValue initialState)
+   step dispatch (State _) (Just (StateValue value)) = return (value `Escaping` dispatch, StateValue value)
+   step dispatch (StateSync _) (Just (StateValue value)) = return (value `Escaping` dispatch, StateValue value)
 
    destroy _ = return ()

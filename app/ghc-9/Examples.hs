@@ -11,7 +11,7 @@ import Control.Monad (forever)
 import Control.Concurrent (threadDelay)
 import System.Random (randomRIO)
 
-useTick :: Stateful Int -> Hooks IO _ (Stateful Int)
+useTick :: Num a => Stateful Int -> Hooks IO '[Context "tick"] a
 useTick intervalState = useContext @"tick" $ Hook.do
   (tickState, setTick) <- useState 0
 
@@ -23,7 +23,7 @@ useTick intervalState = useContext @"tick" $ Hook.do
 
   Hook.return tickState
 
-testProg :: Hooks IO _ (Stateful [Int])
+testProg :: Hooks IO _ [Int]
 testProg = Hook.do
   (numState, updateNum) <- useState (0 :: Int)
 
@@ -37,7 +37,7 @@ testProg = Hook.do
         num <- numState
         return [1..num]
 
-  useMap idxs $ \i -> Hook.do
+  counts <- useMap idxs $ \i -> Hook.do
     (randomOffset, updateRandomOffset) <- useState 0
 
     once $ do
@@ -45,4 +45,8 @@ testProg = Hook.do
       updateRandomOffset $ Set randomValue
       return $ return ()
 
-    useTick ((1000000 +) <$> randomOffset)
+    t <- useTick @Int ((1000000 +) <$> randomOffset)
+
+    Hook.return $ (i *) <$> t
+
+  Hook.return $ counts

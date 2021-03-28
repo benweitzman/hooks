@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 00462f88d5472bd3f5e92008b31d09897132775b92bb7d03b6ea1779d528eab7
+-- hash: 32bbef8c42c4ace00fe8d8bc3a90d4dc41a932cdd01632e72a26e72494262715
 
 name:           hooks
 version:        0.1.0.0
@@ -28,17 +28,18 @@ source-repository head
 library
   exposed-modules:
       Control.Monad.Hooks
-      Control.Monad.Hooks.Class
       Control.Monad.Hooks.Do
       Control.Monad.Hooks.Do.Qualified
+  other-modules:
+      Control.Monad.Hooks.Class
       Control.Monad.Hooks.List
       Control.Monad.Hooks.Primitives
-      Control.Monad.Hooks.Primitives.Effect
       Control.Monad.Hooks.Primitives.Context
+      Control.Monad.Hooks.Primitives.Effect
       Control.Monad.Hooks.Primitives.Map
       Control.Monad.Hooks.Primitives.State
       Control.Monad.Hooks.Runtime
-  other-modules:
+      Control.Monad.Hooks.Stateful
       Paths_hooks
   hs-source-dirs:
       src
@@ -57,7 +58,7 @@ library
 executable hooks-exe
   main-is: Main.hs
   other-modules:
-      Paths_hooks
+      Examples
   default-extensions: DuplicateRecordFields NamedFieldPuns DeriveAnyClass DeriveGeneric OverloadedStrings RankNTypes LambdaCase ScopedTypeVariables GADTs TypeFamilies DataKinds TypeOperators TupleSections FlexibleInstances FlexibleContexts TypeApplications
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:

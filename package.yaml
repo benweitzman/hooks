@@ -49,6 +49,10 @@ dependencies:
 
 library:
   source-dirs: src
+  exposed-modules:
+    - Control.Monad.Hooks
+    - Control.Monad.Hooks.Do
+    - Control.Monad.Hooks.Do.Qualified
 
 executables:
   hooks-exe:
@@ -65,6 +69,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - hooks
+    other-modules:
+      - Examples
 
 tests:
   hooks-test:
