@@ -7,7 +7,7 @@ import Control.Monad.Hooks.Runtime (Hooks(Use))
 import Data.Functor.Identity
 
 newtype Stateful a = Stateful a
-  deriving (Functor, Applicative) via Identity
+  deriving (Functor, Applicative, Monad) via Identity
   deriving newtype Show
 
 data State a m x where

@@ -23,7 +23,7 @@ useTick intervalState = useContext @"tick" $ Hook.do
 
   Hook.return tickState
 
-testProg :: Hooks IO _ [Stateful Int]
+testProg :: Hooks IO _ (Stateful [Int])
 testProg = Hook.do
   (numState, updateNum) <- useState (0 :: Int)
 
@@ -33,12 +33,16 @@ testProg = Hook.do
       updateNum . Set $ read x
     return $ cancel thread
 
-  let idxs = flip fmap numState $ \num -> [1..num]
+  let idxs = do
+        num <- numState
+        return [1..num]
 
   useMap idxs $ \i -> Hook.do
     (randomOffset, updateRandomOffset) <- useState 0
+
     once $ do
       randomValue <- randomRIO (-1000000, 1000000)
       updateRandomOffset $ Set randomValue
       return $ return ()
+
     useTick ((1000000 +) <$> randomOffset)
