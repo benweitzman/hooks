@@ -8,11 +8,22 @@ import qualified Data.Map as M
 import Control.Monad (forM, forM_)
 import qualified Data.Set as S
 import UnliftIO
+import Control.Monad.Hooks.Primitives.State
 
 data Map deps a b m x where
-  Map :: Traversable t => deps -> t a -> (a -> Hooks m effects b) -> Map deps a b m (t b)
+  Map
+    :: Traversable t
+    => Stateful deps
+    -> Stateful (t a)
+     -> (deps -> a -> Hooks m effects b)
+     -> Map deps a b m (t b)
 
-useMap :: (Ord a, Eq deps, Traversable t) => deps -> t a -> (a -> Hooks m effects b) -> Hooks m '[Map deps a b] (t b)
+useMap
+  :: (Ord a, Eq deps, Traversable t)
+  => Stateful deps
+  -> Stateful (t a)
+  -> (deps -> a -> Hooks m effects b)
+  -> Hooks m '[Map deps a b] (t b)
 useMap deps vals action = Use $ Map deps vals action
 
 instance (Ord a, Eq deps) => Hook (Map deps a b) where
@@ -30,12 +41,11 @@ instance (Ord a, Eq deps) => Hook (Map deps a b) where
    step
      :: forall m x
       . (MonadUnliftIO m)
-     => (AsyncUpdate (Map deps a b) m
-     -> m ())
+     => (AsyncUpdate (Map deps a b) m -> m ())
      -> Map deps a b m x
      -> Maybe (HookState (Map deps a b) m)
      -> m (x, HookState (Map deps a b) m)
-   step dispatch (Map deps values action) mPrevState = case mPrevState of
+   step dispatch (Map (Stateful deps) (Stateful values) action) mPrevState = case mPrevState of
      Nothing -> do
        results <- forM values $ \value -> (value,) <$> createSubcontext value
        return (fst . snd <$> results, MapItem deps (M.fromList $ toList results))
@@ -59,7 +69,7 @@ instance (Ord a, Eq deps) => Hook (Map deps a b) where
        createSubcontext value = do
          mvar <- newEmptyMVar
          initialRef <- newIORef True
-         handle <- runHooks (action value) $ \result -> do
+         handle <- runHooks (action deps value) $ \result -> do
            isInitial <- readIORef initialRef
            if isInitial
            then putMVar mvar result >> writeIORef initialRef False

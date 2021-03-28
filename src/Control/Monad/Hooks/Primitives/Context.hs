@@ -1,63 +1,38 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 module Control.Monad.Hooks.Primitives.Context where
 
 import Control.Monad.Hooks.Class
 import GHC.TypeLits (Symbol)
-import Control.Monad.Hooks.Runtime (Hooks(Use), HookExecutionHandle, HookExecutionHandle(HookExecutionHandle), terminate, runHooks)
+import Control.Monad.Hooks.Runtime (Hooks(Use), stepHooks, applyStateUpdate)
 import UnliftIO hiding (handle)
-import Data.Kind (Type)
+import Control.Monad.Hooks.List (HookList, traverseHookList, Elem)
+import Type.Reflection (TypeRep, (:~~:)(HRefl), eqTypeRep, typeRep)
 
-data Context (c :: Type) m x where
-  Context :: forall c m effects . Deps c -> Hooks m effects (Outputs c) -> Context c m (Outputs c)
+data Context (s :: Symbol) m x where
+  Context :: forall s a m effects . Typeable effects => Hooks m effects a -> Context s m a
 
-type family Deps (c :: Type) :: Type
-type family Outputs (c :: Type) :: Type
+typeOfHooks :: Typeable effects => Hooks m effects a -> TypeRep effects
+typeOfHooks _ = typeRep
 
-data AnonymousContext (s :: Symbol) (deps :: Type) (out :: Type)
+useContext :: forall c a m effects . Typeable effects => Hooks m effects a -> Hooks m '[Context c] a
+useContext hook = Use $ Context hook
 
-type instance Deps (AnonymousContext s deps out) = deps
-type instance Outputs (AnonymousContext _ _ out) = out
+instance Hook (Context c) where
+  data instance HookState (Context c) m where
+    HiddenHandle :: TypeRep effects -> HookList effects m -> HookState (Context c) m
 
-type (:~>) = Context
+  data instance AsyncUpdate (Context c) m where
+    HiddenUpdate :: TypeRep effects -> Elem AsyncUpdate effects m -> AsyncUpdate (Context c) m
 
-useContext :: forall c m effects . Eq (Deps c) => (Deps c -> Hooks m effects (Outputs c)) -> Deps c -> Hooks m '[Context c] (Outputs c)
-useContext hook deps = Use (Context deps (hook deps))
+  updateState (HiddenUpdate rep1 update) (HiddenHandle rep2 state) = case eqTypeRep rep1 rep2 of
+    Just HRefl -> HiddenHandle rep1 $ applyStateUpdate update state
 
-instance Eq (Deps c) => Hook (Context c) where
-  data instance HookState (Context c) m = HiddenHandle
-    { value :: Outputs c
-    , dependencies :: Deps c
-    , handle :: HookExecutionHandle m
-    }
+  destroy (HiddenHandle _ substate) = traverseHookList substate destroy
 
-  data instance AsyncUpdate (Context c) m = SetHidden (Outputs c)
-
-  updateState (SetHidden value) (HiddenHandle _ dependencies handle) = HiddenHandle
-    { value
-    , dependencies
-    , handle
-    }
-
-  destroy HiddenHandle { handle = HookExecutionHandle { terminate }} = terminate
-
-  step dispatch (Context deps hidden) mPrevState = case mPrevState of
-    Nothing -> createSubContext
-    Just state@(HiddenHandle value prevDeps handle)
-      | prevDeps == deps -> return (value, state)
-      | otherwise -> do
-          terminate handle
-          createSubContext
-
-    where
-
-      createSubContext = do
-         mvar <- newEmptyMVar
-         initialRef <- newIORef True
-         handle <- runHooks hidden $ \result -> do
-           isInitial <- readIORef initialRef
-           if isInitial
-           then putMVar mvar result >> writeIORef initialRef False
-           else dispatch $ SetHidden result
-         initialValue <- readMVar mvar
-         return (initialValue, HiddenHandle initialValue deps handle)
+  step dispatch (Context hidden) mPrevState = case mPrevState of
+    Nothing -> do
+      (a, nextState) <- stepHooks (dispatch . HiddenUpdate typeRep) hidden Nothing
+      return (a, HiddenHandle typeRep nextState)
+    Just (HiddenHandle rep1 substate) -> case eqTypeRep rep1 (typeOfHooks hidden)  of
+      Just HRefl -> do
+        (a, nextState) <- stepHooks (dispatch . HiddenUpdate typeRep) hidden (Just substate)
+        return (a, HiddenHandle typeRep nextState)

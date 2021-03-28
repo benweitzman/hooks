@@ -11,26 +11,52 @@ import Control.Monad (forever)
 import Control.Concurrent (threadDelay)
 import System.Random (randomRIO)
 
-data Tick a
+{-
 
-type instance Deps (Tick a) = Int
-type instance Outputs (Tick a) = a
+(numState, updateNum) <- useState (0 :: Int)
 
-useTick :: forall a . Num a => Int -> Hooks IO '[Context (Tick a)] a
-useTick = useContext $ \interval -> Hook.do
-  (tick, setTick) <- useState 0
+once $ do
+  thread <- async . forever $ do
+    x <- getLine
+    updateNum . Set $ read x
+  return $ cancel thread
 
-  useEffect interval $ do
+
+let idxs = flip fmap numState $ \num -> [1..num]
+
+useMap idxs $ \i -> Hook.do
+  (randomOffsetState, updateRandomOffset) <- useState 0
+  once $ do
+    randomValue <- randomRIO (-1000000, 1000000)
+    updateRandomOffset $ Set randomValue
+    return $ return ()
+
+  (tickState, setTick) <- useState 0
+
+  useEffect (randomOffsetState, numState) $ \interval -> do
     thread <- async $ forever $ do
       threadDelay interval
       setTick $ Modify (+1)
     return $ cancel thread
 
-  Hook.return tick
+  useTick $ (1000000 +) <$> randomOffset
+-}
 
-testProg :: Hooks IO _ [Int]
+useTick :: Stateful Int -> Hooks IO _ (Stateful Int)
+useTick intervalState = useContext @"tick" $ Hook.do
+  (tickState, setTick) <- useState 0
+
+  useEffect intervalState $ \interval -> do
+    thread <- async $ forever $ do
+      threadDelay interval
+      setTick $ Modify (+1)
+    return $ cancel thread
+
+  Hook.return tickState
+
+testProg :: Hooks IO _ [Stateful Int]
 testProg = Hook.do
-  (num, updateNum) <- useState (0 :: Int)
+  (numState, updateNum) <- useState (0 :: Int)
 
   once $ do
     thread <- async . forever $ do
@@ -38,10 +64,12 @@ testProg = Hook.do
       updateNum . Set $ read x
     return $ cancel thread
 
-  useMap () [1..num] $ \i -> Hook.do
+  let idxs = flip fmap numState $ \num -> [1..num]
+
+  useMap (Stateful ()) idxs $ \() i -> Hook.do
     (randomOffset, updateRandomOffset) <- useState 0
     once $ do
       randomValue <- randomRIO (-1000000, 1000000)
       updateRandomOffset $ Set randomValue
       return $ return ()
-    useTick (1000000 + randomOffset)
+    useTick ((1000000 +) <$> randomOffset)
