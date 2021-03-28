@@ -18,21 +18,21 @@ useContext hook = Use $ Context hook
 
 instance Hook (Context c) where
   data instance HookState (Context c) m where
-    HiddenHandle :: TypeRep effects -> HookList effects m -> HookState (Context c) m
+    HiddenState :: TypeRep effects -> HookList effects m -> HookState (Context c) m
 
   data instance AsyncUpdate (Context c) m where
     HiddenUpdate :: TypeRep effects -> Elem AsyncUpdate effects m -> AsyncUpdate (Context c) m
 
-  updateState (HiddenUpdate rep1 update) (HiddenHandle rep2 state) = case eqTypeRep rep1 rep2 of
-    Just HRefl -> HiddenHandle rep1 $ applyStateUpdate update state
+  updateState (HiddenUpdate rep1 update) (HiddenState rep2 state) = case eqTypeRep rep1 rep2 of
+    Just HRefl -> HiddenState rep1 $ applyStateUpdate update state
 
-  destroy (HiddenHandle _ substate) = traverseHookList substate destroy
+  destroy (HiddenState _ substate) = traverseHookList substate destroy
 
   step dispatch (Context hidden) mPrevState = case mPrevState of
     Nothing -> do
       (a, nextState) <- stepHooks (dispatch . HiddenUpdate typeRep) hidden Nothing
-      return (a, HiddenHandle typeRep nextState)
-    Just (HiddenHandle rep1 substate) -> case eqTypeRep rep1 (typeOfHooks hidden)  of
+      return (a, HiddenState typeRep nextState)
+    Just (HiddenState rep1 substate) -> case eqTypeRep rep1 (typeOfHooks hidden)  of
       Just HRefl -> do
         (a, nextState) <- stepHooks (dispatch . HiddenUpdate typeRep) hidden (Just substate)
-        return (a, HiddenHandle typeRep nextState)
+        return (a, HiddenState typeRep nextState)
