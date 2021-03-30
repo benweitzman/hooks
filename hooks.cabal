@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 32bbef8c42c4ace00fe8d8bc3a90d4dc41a932cdd01632e72a26e72494262715
+-- hash: e8c0dc5ebae448a7e04c23a2d029cb56c9ac67c93691722b8c0317007f01cf48
 
 name:           hooks
 version:        0.1.0.0
@@ -37,6 +37,7 @@ library
       Control.Monad.Hooks.Primitives.Context
       Control.Monad.Hooks.Primitives.Effect
       Control.Monad.Hooks.Primitives.Map
+      Control.Monad.Hooks.Primitives.Ref
       Control.Monad.Hooks.Primitives.State
       Control.Monad.Hooks.Runtime
       Control.Monad.Hooks.Stateful

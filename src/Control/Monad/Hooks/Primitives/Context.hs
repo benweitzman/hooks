@@ -19,7 +19,8 @@ instance Hook (Context c) where
   data instance AsyncUpdate (Context c) m where
     HiddenUpdate :: Elem AsyncUpdate effects m -> AsyncUpdate (Context c) m
 
-  updateState (HiddenUpdate update) (HiddenState state) = HiddenState $ applyStateUpdate update $ unsafeCoerce state
+  updateState (HiddenUpdate update) (HiddenState state) = HiddenState $
+    applyStateUpdate update $ unsafeCoerce state -- sneaky
 
   destroy (HiddenState substate) = traverseHookList substate destroy
 

@@ -5,13 +5,13 @@ import Control.Monad.Hooks.Class
 import Control.Monad.Hooks.Runtime (Hooks(Use))
 
 data State a m x where
-   State :: a -> State a m (a `Escaping` (AsyncUpdate (State a) m -> m ()))
-   StateSync :: m a -> State a m (a `Escaping` (AsyncUpdate (State a) m -> m ()))
+   State :: a -> State a m (a `AndEscaping` (AsyncUpdate (State a) m -> m ()))
+   StateSync :: m a -> State a m (a `AndEscaping` (AsyncUpdate (State a) m -> m ()))
 
-useState :: a -> Hooks m '[State a] (a `Escaping` (AsyncUpdate (State a) m -> m ()))
+useState :: a -> Hooks m '[State a] (a `AndEscaping` (AsyncUpdate (State a) m -> m ()))
 useState = Use . State
 
-useStateSync :: m a -> Hooks m '[State a] (a `Escaping` (AsyncUpdate (State a) m -> m ()))
+useStateSync :: m a -> Hooks m '[State a] (a `AndEscaping` (AsyncUpdate (State a) m -> m ()))
 useStateSync = Use . StateSync
 
 instance Hook (State a) where
@@ -24,9 +24,9 @@ instance Hook (State a) where
 
    step dispatch (StateSync genInitialState) Nothing = do
      initialState <- genInitialState
-     return (initialState `Escaping` dispatch, StateValue initialState)
-   step dispatch (State initialState) Nothing = return (initialState `Escaping` dispatch, StateValue initialState)
-   step dispatch (State _) (Just (StateValue value)) = return (value `Escaping` dispatch, StateValue value)
-   step dispatch (StateSync _) (Just (StateValue value)) = return (value `Escaping` dispatch, StateValue value)
+     return (initialState `AndEscaping` dispatch, StateValue initialState)
+   step dispatch (State initialState) Nothing = return (initialState `AndEscaping` dispatch, StateValue initialState)
+   step dispatch (State _) (Just (StateValue value)) = return (value `AndEscaping` dispatch, StateValue value)
+   step dispatch (StateSync _) (Just (StateValue value)) = return (value `AndEscaping` dispatch, StateValue value)
 
    destroy _ = return ()
