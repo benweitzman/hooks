@@ -6,6 +6,7 @@ module Examples where
 
 import Control.Monad.Hooks
 import qualified Control.Monad.Hooks.Do.Qualified as Hook
+import qualified Control.Monad.Hooks.Branch as Branch
 import Control.Concurrent.Async (async, cancel)
 import Control.Monad (forever)
 import Control.Concurrent (threadDelay)
@@ -47,6 +48,17 @@ testProg = Hook.do
 
     t <- useTick @Int ((1000000 +) <$> randomOffset)
 
-    Hook.return $ (i *) <$> t
+    modifier <- useCase t $ Branch.do
+      When even $ Hook.do
+        useTick (return 50000)
+      When odd $ Hook.do
+        t' <- useTick @Int (return 50000)
+        Hook.return $ negate <$> t'
+      Else (1 :: Int)
+
+    Hook.return $ do
+      m <- modifier
+      v <- t
+      return $ m * v
 
   Hook.return $ counts

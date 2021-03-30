@@ -5,7 +5,9 @@ module Control.Monad.Hooks.Class where
 import Data.Kind
 import UnliftIO
 
-class Hook a where
+type HookK = (Type -> Type) -> Type -> Type
+
+class Hook (a :: HookK) where
   data family HookState a :: (Type -> Type) -> Type
 
   data family AsyncUpdate a :: (Type -> Type) -> Type
