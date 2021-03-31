@@ -13,6 +13,12 @@ data Clause m a b effects where
   When :: (a -> Bool) -> Hooks m effects b -> Clause m a b effects
   LetWhen :: (a -> Maybe c) -> (c -> Hooks m effects b) -> Clause m a b effects
 
+(->>) :: (a -> Bool) -> Hooks m effects b -> Clause m a b effects
+(->>) = When
+
+(->>*) :: (a -> Maybe c) -> (c -> Hooks m effects b) -> Clause m a b effects
+(->>*) = LetWhen
+
 data Clauses (m :: Type -> Type) (a :: Type) (b :: Type) (bs :: [[HookK]]) where
   Or :: Clause m a b x -> Clauses m a b ys -> Clauses m a b (x ': ys)
   Else :: b -> Clauses m a b '[]

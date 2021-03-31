@@ -49,9 +49,9 @@ testProg = Hook.do
     t <- useTick @Int ((1000000 +) <$> randomOffset)
 
     modifier <- useCase t $ Branch.do
-      When even $ Hook.do
+      even ->> Hook.do
         useTick (return 50000)
-      When odd $ Hook.do
+      odd ->> Hook.do
         t' <- useTick @Int (return 50000)
         Hook.return $ negate <$> t'
       Else (1 :: Int)
