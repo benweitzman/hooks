@@ -41,3 +41,12 @@ monad = Monad
   , (>>=) = (P.>>=)
   , (>>) = (P.>>)
   }
+
+data Branch = Branch
+  { (>>) :: forall m a b x ys . Clause m a b x -> Clauses m a b ys -> Clauses m a b (x : ys)
+  }
+
+branch :: Branch
+branch = Branch
+  { (>>) = Or
+  }

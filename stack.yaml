@@ -20,7 +20,7 @@
 resolver:
   url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/27.yaml
 
-compiler: ghc-9.0.0.20201227
+compiler: ghc-9.0.1
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.

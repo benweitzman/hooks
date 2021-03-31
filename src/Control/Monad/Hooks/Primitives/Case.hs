@@ -8,18 +8,6 @@ import Control.Monad.Hooks.List (Elem(Here, There), HookList, traverseHookList)
 import UnliftIO
 import Control.Monad (forM_)
 
-{-
-useSomthing = Hook.do
-  useCase someValue $ Branch.do
-    When isEven $ Hook.do
-      blah blah
-      blah
-    When isOdd $ Hook.do
-      blah blah
-      blah
-    End
--}
-
 data Clause m a b effects where
   When :: (a -> Bool) -> Hooks m effects b -> Clause m a b effects
   LetWhen :: (a -> Maybe c) -> (c -> Hooks m effects b) -> Clause m a b effects

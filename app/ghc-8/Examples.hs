@@ -12,34 +12,53 @@ import Control.Monad (forever)
 import Control.Concurrent (threadDelay)
 import System.Random (randomRIO)
 
-useTick :: Int -> Hooks IO _ Int
-useTick interval = let Do.Hook {..} = Do.hook in do
-  (tick, setTick) <- Use (State 0)
+useTick :: Stateful Int -> Hooks IO _ Int
+useTick intervalState = useContext @"tick" $ let Do.Hook {..} = Do.hook in do
+  (tickState, setTick) <- useState 0
 
-  Use $ Effect interval $ let Do.Monad {..} = Do.monad in do
+  useEffect intervalState $ \interval -> let Do.Monad {..} = Do.monad in do
     thread <- async $ forever $ do
       threadDelay interval
       setTick $ Modify (+1)
     return $ cancel thread
 
-  HookReturn tick
+  HookReturn tickState
 
 testProg :: Hooks IO _ [Int]
 testProg = let Do.Hook {..} = Do.hook in do
 
-  (num, updateNum) <- Use $ State (0 :: Int)
+  (numState, updateNum) <- useState 0
 
-  Use $ Effect () $ let Do.Monad {..} = Do.monad in do
+  once $ let Do.Monad {..} = Do.monad in do
     thread <- async . forever $ do
       x <- getLine
       updateNum . Set $ read x
     return $ cancel thread
 
-  Use $ Map () [1..num] $ \i -> do
-    (randomOffset, updateRandomOffset) <- Use $ State 0
+  let idxs = let Do.Monad {..} = Do.monad in do
+        num <- numState
+        return [1..num]
 
-    Use $ Effect () $ let Do.Monad {..} = Do.monad in do
+  useMap idxs $ \i -> do
+    (randomOffset, updateRandomOffset) <- useState 0
+
+    once $ let Do.Monad {..} = Do.monad in do
       randomValue <- randomRIO (-1000000, 1000000)
       updateRandomOffset $ Set randomValue
       return $ return ()
-    useTick (1000000 + randomOffset)
+
+    t <- useTick $ (1000000 +) <$> randomOffset
+
+    modifier <- useCase t $ let Do.Branch {..} = Do.branch in do
+      When even $ let Do.Hook {..} = Do.hook in do
+        useTick (pure 50000)
+      When odd $ let Do.Hook {..} = Do.hook in do
+        t' <- useTick (pure 50000)
+        return $ negate <$> t'
+      Else (1 :: Int)
+
+    return $ let Do.Monad {..} = Do.monad in do
+      m <- modifier
+      v <- t
+      return $ m * v
+
