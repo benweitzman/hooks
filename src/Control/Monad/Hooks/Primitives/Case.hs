@@ -13,9 +13,11 @@ data Clause m a b effects where
   When :: (a -> Bool) -> Hooks m effects b -> Clause m a b effects
   LetWhen :: (a -> Maybe c) -> (c -> Hooks m effects b) -> Clause m a b effects
 
+-- | infix alias for `When`
 (->>) :: (a -> Bool) -> Hooks m effects b -> Clause m a b effects
 (->>) = When
 
+-- | infix alias for `LetWhen`
 (->>*) :: (a -> Maybe c) -> (c -> Hooks m effects b) -> Clause m a b effects
 (->>*) = LetWhen
 

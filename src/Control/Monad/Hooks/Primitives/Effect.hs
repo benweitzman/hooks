@@ -5,12 +5,21 @@ module Control.Monad.Hooks.Primitives.Effect where
 import Control.Monad.Hooks.Stateful
 import Control.Monad.Hooks.Class
 import Control.Monad.Hooks.Runtime (Hooks(Use))
+import Control.Applicative (liftA2, liftA3)
 
 data Effect a m x where
   Effect :: Eq a => Stateful a -> (a -> m (m ())) -> Effect a m ()
 
 useEffect :: Eq a => Stateful a -> (a -> m (m ())) -> Hooks m '[Effect a] ()
 useEffect key eff = Use $ Effect key eff
+
+useEffect2 :: (Eq a, Eq b) => Stateful a -> Stateful b -> (a -> b -> m (m ())) -> Hooks m '[Effect (a, b)] ()
+useEffect2 a b run = useEffect (liftA2 (,) a b) (uncurry run)
+
+useEffect3 :: (Eq a, Eq b, Eq c) => Stateful a -> Stateful b -> Stateful c -> (a -> b -> c -> m (m ())) -> Hooks m '[Effect (a, b, c)] ()
+useEffect3 a b c run = useEffect (liftA3 (,,) a b c) (uncurry3 run)
+  where
+    uncurry3 f (x, y, z) = f x y z
 
 once :: m (m ()) -> Hooks m '[Effect ()] ()
 once = useEffect (Stateful ()) . const

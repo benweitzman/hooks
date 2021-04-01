@@ -55,11 +55,21 @@ data HookExecutionHandle m = HookExecutionHandle
    , terminate :: m ()
    }
 
+-- | Run a Hooks program using the provided listener to consume values
+-- produced over time as the internal state evolves. The listener will be
+-- called once for each value produced.
+--
+-- Hooks programs are inherently asynchronous, so this produces a handle which
+-- can be used to help slot the Hooks into your larger application, either by
+-- blocking the program from exiting while the Hooks run or by terminating the
+-- Hooks program when necessary.
+--
+-- Hooks programs won't terminate except by throwing an exception.
 runHooks
   :: forall effects a m
    . (MonadUnliftIO m)
-  => Hooks m effects a
-  -> (a -> m ())
+  => Hooks m effects a -- ^ Hooks program
+  -> (a -> m ()) -- ^ Listener
   -> m (HookExecutionHandle m)
 runHooks program observe = do
   updateQueue <- newChan
